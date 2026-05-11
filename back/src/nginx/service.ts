@@ -4,9 +4,26 @@ import { parseNginxConfigFiles } from './parser'
 import type { ParsedProxyConfig, RawNginxConfigFile } from './types'
 
 const DEFAULT_SITES_AVAILABLE_DIR = '/etc/nginx/sites-available'
+const DEFAULT_NGINX_CONFIG_PATH = '/etc/nginx/nginx.conf'
 
 export function getNginxSitesAvailableDir() {
   return Bun.env.NGINX_SITES_AVAILABLE_DIR || DEFAULT_SITES_AVAILABLE_DIR
+}
+
+export function getNginxConfigPath() {
+  return Bun.env.NGINX_CONFIG_PATH || DEFAULT_NGINX_CONFIG_PATH
+}
+
+export async function getNginxConfigFile(configPath = getNginxConfigPath()): Promise<RawNginxConfigFile> {
+  if (!(await isReadableFile(configPath))) {
+    throw new Error(`Config file is not readable: ${configPath}`)
+  }
+
+  return {
+    path: configPath,
+    filename: configPath.split('/').at(-1) ?? 'nginx.conf',
+    content: await Bun.file(configPath).text(),
+  }
 }
 
 export async function listNginxConfigFiles(

@@ -1,6 +1,12 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { getNginxSitesAvailableDir, listNginxConfigFiles, listNginxProxySites } from './nginx/service'
+import {
+  getNginxConfigFile,
+  getNginxConfigPath,
+  getNginxSitesAvailableDir,
+  listNginxConfigFiles,
+  listNginxProxySites,
+} from './nginx/service'
 
 export const app = new Hono()
 
@@ -18,6 +24,7 @@ app.get('/', (c) => {
     status: 'ok',
     endpoints: {
       health: '/api/health',
+      nginxConfig: '/api/nginx/config',
       nginxSites: '/api/nginx/sites',
       nginxConfigFiles: '/api/nginx/config-files',
     },
@@ -27,8 +34,24 @@ app.get('/', (c) => {
 app.get('/api/health', (c) => {
   return c.json({
     status: 'ok',
+    nginxConfigPath: getNginxConfigPath(),
     nginxSitesAvailableDir: getNginxSitesAvailableDir(),
   })
+})
+
+app.get('/api/nginx/config', async (c) => {
+  try {
+    return c.json(await getNginxConfigFile())
+  } catch (error) {
+    return c.json(
+      {
+        error: 'Could not read nginx config',
+        path: getNginxConfigPath(),
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      503,
+    )
+  }
 })
 
 app.get('/api/nginx/config-files', async (c) => {
