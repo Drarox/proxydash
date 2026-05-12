@@ -8,7 +8,14 @@ defineProps<{
 
 <template>
   <section class="stats-grid" aria-label="Proxy statistics">
-    <article v-for="stat in stats" :key="stat.label" class="stat-card" :data-tone="stat.tone">
+    <article 
+      v-for="stat in stats" 
+      :key="stat.label" 
+      class="stat-card" 
+      :class="{ 'stat-card--clickable': stat.action }"
+      :data-tone="stat.tone"
+      @click="stat.action?.()"
+    >
       <p>{{ stat.label }}</p>
       <strong>{{ stat.value }}</strong>
       <span>{{ stat.detail }}</span>

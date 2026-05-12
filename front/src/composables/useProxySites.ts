@@ -1,6 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
-import { fetchSites } from '@/services/sitesApi'
-import type { DashboardStat, FilterKey, ProxySite } from '@/types/proxy'
+import { fetchNginxConfig, fetchSites } from '@/services/sitesApi'
+import type { DashboardStat, FilterKey, NginxConfig, ProxySite } from '@/types/proxy'
 
 export const filters: Array<{ label: string; value: FilterKey }> = [
   { label: 'All', value: 'all' },
@@ -16,6 +16,8 @@ export function useProxySites() {
   const query = ref('')
   const activeFilter = ref<FilterKey>('all')
   const selectedSite = ref<ProxySite | null>(null)
+  const nginxConfig = ref<NginxConfig | null>(null)
+  const showNginxConfig = ref(false)
   const isLoading = ref(true)
   const error = ref<string | null>(null)
 
@@ -40,14 +42,13 @@ export function useProxySites() {
     const total = sites.value.length
     const secured = sites.value.filter((site) => site.certificateStatus === 'valid').length
     const attention = sites.value.filter((site) => site.certificateStatus !== 'valid').length
-    const upstreamBlocks = sites.value.filter((site) => site.upstreamName).length
     const tlsHealth = total === 0 ? 0 : Math.round((secured / total) * 100)
 
     return [
       { label: 'Sites', value: total.toString(), detail: 'Loaded from backend', tone: 'blue' },
       { label: 'Attention', value: attention.toString(), detail: 'Certificate issues', tone: 'amber' },
       { label: 'TLS healthy', value: `${tlsHealth}%`, detail: `${secured} valid certs`, tone: 'green' },
-      { label: 'Upstreams', value: upstreamBlocks.toString(), detail: 'Named upstream blocks', tone: 'violet' },
+      { label: 'Global config', value: 'View config', detail: 'nginx.conf', tone: 'violet', action: openNginxConfig },
     ]
   })
 
@@ -57,12 +58,21 @@ export function useProxySites() {
 
     try {
       sites.value = await fetchSites()
+      nginxConfig.value = await fetchNginxConfig()
     } catch (loadError) {
       sites.value = []
       error.value = loadError instanceof Error ? loadError.message : 'Failed to load sites'
     } finally {
       isLoading.value = false
     }
+  }
+
+  function openNginxConfig() {
+    showNginxConfig.value = true
+  }
+
+  function closeNginxConfig() {
+    showNginxConfig.value = false
   }
 
   function openConfig(site: ProxySite) {
@@ -78,13 +88,17 @@ export function useProxySites() {
   return {
     activeFilter,
     closeConfig,
+    closeNginxConfig,
     error,
     filteredSites,
     isLoading,
     loadSites,
+    nginxConfig,
     openConfig,
+    openNginxConfig,
     query,
     selectedSite,
+    showNginxConfig,
     sites,
     stats,
   }

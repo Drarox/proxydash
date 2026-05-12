@@ -259,6 +259,20 @@ p {
   border-top: 4px solid var(--violet);
 }
 
+.stat-card--clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card--clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 28px 70px rgb(15 23 42 / 0.15);
+}
+
+.stat-card--clickable:active {
+  transform: translateY(0);
+}
+
 .toolbar {
   display: flex;
   align-items: center;

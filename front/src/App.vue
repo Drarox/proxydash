@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import ConfigModal from '@/components/ConfigModal.vue'
 import DashboardHeader from '@/components/DashboardHeader.vue'
 import FilterToolbar from '@/components/FilterToolbar.vue'
+import NginxConfigModal from '@/components/NginxConfigModal.vue'
 import SitesTable from '@/components/SitesTable.vue'
 import StatsGrid from '@/components/StatsGrid.vue'
 import { filters, useProxySites } from '@/composables/useProxySites'
@@ -12,13 +13,16 @@ const isDark = ref(false)
 const {
   activeFilter,
   closeConfig,
+  closeNginxConfig,
   error,
   filteredSites,
   isLoading,
   loadSites,
+  nginxConfig,
   openConfig,
   query,
   selectedSite,
+  showNginxConfig,
   sites,
   stats,
 } = useProxySites()
@@ -55,5 +59,6 @@ function toggleTheme() {
     </div>
 
     <ConfigModal :site="selectedSite" @close="closeConfig" />
+    <NginxConfigModal :config="nginxConfig" :show="showNginxConfig" @close="closeNginxConfig" />
   </div>
 </template>

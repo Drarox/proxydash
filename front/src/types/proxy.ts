@@ -30,4 +30,11 @@ export interface DashboardStat {
   value: string
   detail: string
   tone: 'blue' | 'green' | 'amber' | 'violet'
+  action?: () => void
+}
+
+export interface NginxConfig {
+  path: string
+  filename: string
+  content: string
 }
