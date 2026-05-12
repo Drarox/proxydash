@@ -1,11 +1,59 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref } from 'vue'
+import ConfigModal from '@/components/ConfigModal.vue'
+import DashboardHeader from '@/components/DashboardHeader.vue'
+import FilterToolbar from '@/components/FilterToolbar.vue'
+import SitesTable from '@/components/SitesTable.vue'
+import StatsGrid from '@/components/StatsGrid.vue'
+import { filters, useProxySites } from '@/composables/useProxySites'
+
+const isDark = ref(false)
+
+const {
+  activeFilter,
+  closeConfig,
+  error,
+  filteredSites,
+  isLoading,
+  loadSites,
+  openConfig,
+  query,
+  selectedSite,
+  sites,
+  stats,
+} = useProxySites()
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+}
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p class="text-red-500">
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
-</template>
+  <div class="app-shell" :class="{ 'theme-dark': isDark }">
+    <div class="dashboard">
+      <main class="main-content">
+        <DashboardHeader
+          v-model:query="query"
+          :error="error"
+          :is-dark="isDark"
+          :is-loading="isLoading"
+          @refresh="loadSites"
+          @toggle-theme="toggleTheme"
+        />
 
-<style scoped></style>
+        <StatsGrid :stats="stats" />
+
+        <FilterToolbar
+          v-model:active-filter="activeFilter"
+          :filters="filters"
+          :result-count="filteredSites.length"
+          :total-count="sites.length"
+        />
+
+        <SitesTable :is-loading="isLoading" :sites="filteredSites" @open-config="openConfig" />
+      </main>
+    </div>
+
+    <ConfigModal :site="selectedSite" @close="closeConfig" />
+  </div>
+</template>
