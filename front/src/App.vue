@@ -8,7 +8,7 @@ import SitesTable from '@/components/SitesTable.vue'
 import StatsGrid from '@/components/StatsGrid.vue'
 import { filters, useProxySites } from '@/composables/useProxySites'
 
-const isDark = ref(false)
+const isDark = ref(localStorage.getItem('theme') === 'dark')
 
 const {
   activeFilter,
@@ -29,6 +29,7 @@ const {
 
 function toggleTheme() {
   isDark.value = !isDark.value
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
 </script>
 

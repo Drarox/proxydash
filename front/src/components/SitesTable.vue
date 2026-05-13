@@ -50,7 +50,15 @@ function hasConfiguredOptions(site: ProxySite) {
           <tr v-for="site in sites" :key="site.id">
             <td>
               <div class="domain-cell">
-                <span class="domain-name">{{ site.domain }}</span>
+                <a
+                  :href="`https://${site.domain}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="domain-link"
+                >
+                  <span class="domain-name">{{ site.domain }}</span>
+                  <span class="external-icon" aria-hidden="true">↗</span>
+                </a>
                 <span class="muted">{{ site.aliases.length ? site.aliases.join(', ') : site.configPath }}</span>
               </div>
             </td>
