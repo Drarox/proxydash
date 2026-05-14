@@ -1,7 +1,7 @@
 import type { NginxConfig, ProxySite } from '@/types/proxy'
 
-const SITES_ENDPOINT = 'http://localhost:3000/api/nginx/sites'
-const CONFIG_ENDPOINT = 'http://localhost:3000/api/nginx/config'
+const SITES_ENDPOINT = '/api/nginx/sites'
+const CONFIG_ENDPOINT = '/api/nginx/config'
 
 export async function fetchSites(): Promise<ProxySite[]> {
   const response = await fetch(SITES_ENDPOINT)

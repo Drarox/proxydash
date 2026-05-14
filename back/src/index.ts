@@ -7,6 +7,7 @@ import {
   listNginxConfigFiles,
   listNginxProxySites,
 } from './nginx/service'
+import { serveStatic } from 'hono/bun'
 
 export const app = new Hono()
 
@@ -18,7 +19,9 @@ app.use(
   }),
 )
 
-app.get('/', (c) => {
+app.use('/*', serveStatic({ root: './static/' }))
+
+app.get('/api', (c) => {
   return c.json({
     app: 'ProxyDash',
     status: 'ok',
@@ -82,6 +85,12 @@ app.get('/api/nginx/sites', async (c) => {
       503,
     )
   }
+})
+
+// Error handler
+app.onError((err, c) => {
+  console.error('Unhandled error:', err);
+  return c.json({ error: 'Internal Server Error' }, 500);
 })
 
 if (import.meta.main) {
