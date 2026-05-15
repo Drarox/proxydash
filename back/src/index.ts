@@ -6,7 +6,10 @@ import {
   getNginxSitesAvailableDir,
   listNginxConfigFiles,
   listNginxProxySites,
+  listProxyDomains,
 } from './nginx/service'
+import { startCertRefreshCron } from './crons/certRefresh'
+import { refreshCerts, getCacheSnapshot } from './cache/certCache'
 import { serveStatic } from 'hono/bun'
 
 export const app = new Hono()
@@ -15,7 +18,7 @@ app.use(
   '/api/*',
   cors({
     origin: '*',
-    allowMethods: ['GET', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
   }),
 )
 
@@ -30,6 +33,7 @@ app.get('/api', (c) => {
       nginxConfig: '/api/nginx/config',
       nginxSites: '/api/nginx/sites',
       nginxConfigFiles: '/api/nginx/config-files',
+      certCacheRefresh: 'POST /api/nginx/cert-cache/refresh',
     },
   })
 })
@@ -87,10 +91,27 @@ app.get('/api/nginx/sites', async (c) => {
   }
 })
 
+// Manually trigger a cert cache refresh.
+app.post('/api/nginx/cert-cache/refresh', async (c) => {
+  try {
+    const domains = await listProxyDomains()
+    await refreshCerts(domains)
+    return c.json({ refreshed: true, domains })
+  } catch (error) {
+    return c.json(
+      {
+        error: 'Cert cache refresh failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      503,
+    )
+  }
+})
+
 // Error handler
 app.onError((err, c) => {
-  console.error('Unhandled error:', err);
-  return c.json({ error: 'Internal Server Error' }, 500);
+  console.error('Unhandled error:', err)
+  return c.json({ error: 'Internal Server Error' }, 500)
 })
 
 if (import.meta.main) {
@@ -100,4 +121,8 @@ if (import.meta.main) {
   })
 
   console.log(`ProxyDash API listening on ${server.url}`)
+
+  startCertRefreshCron().catch((err) =>
+    console.error('[certRefresh] Failed to start cert refresh cron:', err),
+  )
 }

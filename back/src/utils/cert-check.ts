@@ -17,7 +17,7 @@ export const checkCertExpiry = async (hostname: string, port = 443): Promise<{
       rejectUnauthorized: false,
     })
 
-    socket.setTimeout(5000, () => {
+    socket.setTimeout(10000, () => {
       socket.destroy(new Error('Certificate check timed out'))
     })
 

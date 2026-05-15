@@ -1,6 +1,7 @@
 import { readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseNginxConfigFiles } from './parser'
+import { getCachedCert } from '../cache/certCache'
 import type { ParsedProxyConfig, RawNginxConfigFile } from './types'
 
 const DEFAULT_SITES_AVAILABLE_DIR = '/etc/nginx/sites-available'
@@ -56,7 +57,27 @@ export async function listNginxConfigFiles(
 export async function listNginxProxySites(
   sitesAvailableDir = getNginxSitesAvailableDir(),
 ): Promise<ParsedProxyConfig[]> {
-  return parseNginxConfigFiles(await listNginxConfigFiles(sitesAvailableDir))
+  const files = await listNginxConfigFiles(sitesAvailableDir)
+  return parseNginxConfigFiles(files, certCheckerFromCache)
+}
+
+// Returns all unique domains found across all proxy site configs.
+export async function listProxyDomains(
+  sitesAvailableDir = getNginxSitesAvailableDir(),
+): Promise<string[]> {
+  const sites = await listNginxProxySites(sitesAvailableDir)
+  const domains = sites.map((s) => s.domain).filter(Boolean)
+  return Array.from(new Set(domains))
+}
+
+// Certificate checker that reads from the in-memory cache. Falls back to 'unknown' if the domain hasn't been cached yet.
+async function certCheckerFromCache(domain: string) {
+  const cached = getCachedCert(domain)
+  if (cached) {
+    return { status: cached.status, expiresAt: cached.expiresAt }
+  }
+  // Cache miss: return unknown
+  return { status: 'unknown' as const, expiresAt: null }
 }
 
 async function isReadableFile(path: string) {

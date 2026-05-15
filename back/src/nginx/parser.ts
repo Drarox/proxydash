@@ -1,9 +1,7 @@
-import { checkCertExpiry } from '../utils/cert-check'
 import type { CertificateStatus, ParsedProxyConfig, RawNginxConfigFile } from './types'
 
 type UpstreamRegistry = Record<string, string>
 type CertificateChecker = (domain: string) => Promise<CertificateInfo>
-type CertificateCache = Map<string, Promise<CertificateInfo>>
 
 interface Block {
   name: string
@@ -18,12 +16,11 @@ interface CertificateInfo {
 
 export async function parseNginxConfigFiles(
   files: RawNginxConfigFile[],
-  checkCertificate: CertificateChecker = checkCertificateWithTls,
+  checkCertificate: CertificateChecker,
 ): Promise<ParsedProxyConfig[]> {
   const upstreams = collectUpstreams(files)
-  const certificateCache: CertificateCache = new Map()
   const sites = await Promise.all(
-    files.flatMap((file) => parseConfigFile(file, upstreams, checkCertificate, certificateCache)),
+    files.flatMap((file) => parseConfigFile(file, upstreams, checkCertificate)),
   )
 
   return sites.filter((site): site is ParsedProxyConfig => site !== null)
@@ -32,17 +29,16 @@ export async function parseNginxConfigFiles(
 export function parseConfigFile(
   file: RawNginxConfigFile,
   upstreams: UpstreamRegistry = {},
-  checkCertificate: CertificateChecker = checkCertificateWithTls,
-  certificateCache: CertificateCache = new Map(),
+  checkCertificate: CertificateChecker,
 ): Array<Promise<ParsedProxyConfig | null>> {
   const cleanedContent = stripComments(file.content)
   const serverBlocks = findBlocks(cleanedContent, 'server')
 
   if (serverBlocks.length === 0) {
-    return [parseServerBlock(file, cleanedContent, upstreams, checkCertificate, certificateCache)]
+    return [parseServerBlock(file, cleanedContent, upstreams, checkCertificate)]
   }
 
-  return serverBlocks.map((block) => parseServerBlock(file, block.body, upstreams, checkCertificate, certificateCache))
+  return serverBlocks.map((block) => parseServerBlock(file, block.body, upstreams, checkCertificate))
 }
 
 function collectUpstreams(files: RawNginxConfigFile[]): UpstreamRegistry {
@@ -66,7 +62,6 @@ async function parseServerBlock(
   serverBody: string,
   upstreams: UpstreamRegistry,
   checkCertificate: CertificateChecker,
-  certificateCache: CertificateCache,
 ): Promise<ParsedProxyConfig | null> {
   const serverNames = getDirectiveValues(serverBody, 'server_name').filter((name) => name !== '_')
   const proxyPass = getDirectiveValue(serverBody, 'proxy_pass')
@@ -79,7 +74,7 @@ async function parseServerBlock(
   const certificatePath = getDirectiveValue(serverBody, 'ssl_certificate')
   const fallbackDomain = file.filename.replace(/\.conf$/i, '')
   const domain = serverNames[0] ?? fallbackDomain
-  const certificate = await getCertificateInfo(domain, checkCertificate, certificateCache)
+  const certificate = await checkCertificate(domain)
 
   return {
     id: file.path,
@@ -265,43 +260,6 @@ function resolveUpstreamTarget(proxyPass: string | null, upstreams: UpstreamRegi
 
 function normalizeProxyPass(proxyPass: string) {
   return proxyPass.replace(/^https?:\/\//i, '').replace(/\/$/, '')
-}
-
-async function getCertificateInfo(
-  domain: string | null,
-  checkCertificate: CertificateChecker,
-  certificateCache: CertificateCache,
-): Promise<CertificateInfo> {
-  if (!domain) {
-    return { status: 'missing', expiresAt: null }
-  }
-
-  if (!certificateCache.has(domain)) {
-    certificateCache.set(domain, checkCertificate(domain))
-  }
-
-  return certificateCache.get(domain)!
-}
-
-async function checkCertificateWithTls(domain: string): Promise<CertificateInfo> {
-  try {
-    const result = await checkCertExpiry(domain)
-    const expiresAt = result.validTo
-
-    if (Number.isNaN(expiresAt.getTime())) {
-      return { status: 'unknown', expiresAt: null }
-    }
-
-    if (result.daysLeft <= 0) {
-      return { status: 'expired', expiresAt: expiresAt.toISOString() }
-    }
-
-    const status: CertificateStatus = result.daysLeft <= 30 ? 'warning' : 'valid'
-
-    return { status, expiresAt: expiresAt.toISOString() }
-  } catch {
-    return { status: 'unknown', expiresAt: null }
-  }
 }
 
 function escapeRegExp(value: string) {
