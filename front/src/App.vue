@@ -55,7 +55,7 @@ function toggleTheme() {
           :total-count="sites.length"
         />
 
-        <SitesTable :is-loading="isLoading" :sites="filteredSites" @open-config="openConfig" />
+        <SitesTable :is-loading="isLoading" :sites="filteredSites" @open-config="openConfig" @refresh-sites="loadSites" />
       </main>
     </div>
 
