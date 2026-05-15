@@ -10,6 +10,20 @@ export const checkCertExpiry = async (hostname: string, port = 443): Promise<{
   issuer: string
 }> => {
   return await new Promise((resolve, reject) => {
+    let settled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    const settle = (fn: () => void) => {
+      if (settled) return
+      settled = true
+      if (timer) clearTimeout(timer)
+      // Give the socket a tick to flush before destroying
+      setImmediate(() => {
+        try { socket.destroy() } catch { /* ignore */ }
+      })
+      fn()
+    }
+
     const socket = tls.connect({
       host: hostname,
       port,
@@ -17,9 +31,9 @@ export const checkCertExpiry = async (hostname: string, port = 443): Promise<{
       rejectUnauthorized: false,
     })
 
-    socket.setTimeout(10000, () => {
-      socket.destroy(new Error('Certificate check timed out'))
-    })
+    timer = setTimeout(() => {
+      settle(() => reject(new Error(`Certificate check timed out for ${hostname}`)))
+    }, 10_000)
 
     socket.on('secureConnect', () => {
       try {
@@ -27,7 +41,7 @@ export const checkCertExpiry = async (hostname: string, port = 443): Promise<{
         socket.end()
 
         if (!peerCert || !peerCert.valid_from || !peerCert.valid_to) {
-          reject(new Error('No peer cert'))
+          settle(() => reject(new Error('No peer cert')))
           return
         }
 
@@ -35,17 +49,17 @@ export const checkCertExpiry = async (hostname: string, port = 443): Promise<{
         const validTo = new Date(peerCert.valid_to)
         const daysLeft = Math.floor((validTo.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 
-        resolve({
+        settle(() => resolve({
           validFrom,
           validTo,
           daysLeft,
           issuer: toStringValue(peerCert.issuer?.CN),
-        })
+        }))
       } catch (err) {
-        reject(err)
+        settle(() => reject(err))
       }
     })
 
-    socket.on('error', reject)
+    socket.on('error', (err) => settle(() => reject(err)))
   })
 }

@@ -594,10 +594,6 @@ pre code {
   font-weight: 500;
 }
 
-.muted {
-  color: var(--color-text-muted, #666);
-}
-
 .certificate-cell {
   display: flex;
   align-items: center;

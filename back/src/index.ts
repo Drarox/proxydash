@@ -114,6 +114,15 @@ app.onError((err, c) => {
   return c.json({ error: 'Internal Server Error' }, 500)
 })
 
+process.on('uncaughtException', (err, origin) => {
+  console.error('[uncaughtException]', err);
+  console.error('origin:', origin);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+
 if (import.meta.main) {
   const server = Bun.serve({
     port: Number(Bun.env.PORT ?? 3000),
