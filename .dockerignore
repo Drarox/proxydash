@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# Docs / meta
+README.md
+*.md
+
+# Misnamed legacy file
+Dockerffile
+
+# Frontend – skip source, only the dist is needed at runtime
+front/node_modules
+front/dist
+front/.vscode
+
+# Backend – skip dev artifacts
+back/node_modules
+back/static
+back/.env
+back/mock
+back/.vscode
+
+# macOS
+**/.DS_Store

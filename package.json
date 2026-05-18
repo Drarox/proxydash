@@ -1,0 +1,7 @@
+{
+  "name": "proxydash",
+  "scripts": {
+    "docker-build": "docker buildx build --platform linux/amd64,linux/arm64 -t drarox/proxydash:latest --load .",
+    "docker-build-deploy": "docker buildx build --platform linux/amd64,linux/arm64 -t drarox/proxydash:latest --push ."
+  }
+}
