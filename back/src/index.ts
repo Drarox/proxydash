@@ -33,6 +33,7 @@ app.get('/api', (c) => {
       nginxConfig: '/api/nginx/config',
       nginxSites: '/api/nginx/sites',
       nginxConfigFiles: '/api/nginx/config-files',
+      stats: '/api/stats',
       certCacheRefresh: 'POST /api/nginx/cert-cache/refresh',
     },
   })
@@ -101,6 +102,33 @@ app.post('/api/nginx/cert-cache/refresh', async (c) => {
     return c.json(
       {
         error: 'Cert cache refresh failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      503,
+    )
+  }
+})
+
+app.get('/api/stats', async (c) => {
+  try {
+    const sites = await listNginxProxySites()
+    const total = sites.length
+    const snapshot = getCacheSnapshot()
+
+    const certStatuses = sites.map((s) => snapshot[s.domain]?.status ?? s.certificateStatus)
+    const needsAttention = certStatuses.filter((s) => s === 'warning' || s === 'expired' || s === 'unknown').length
+    const healthy = certStatuses.filter((s) => s === 'valid').length
+    const tlsHealthPercent = total > 0 ? Math.round((healthy / total) * 100) : 100
+
+    return c.json({
+      sites: total,
+      certsNeedingAttention: needsAttention,
+      tlsHealthPercent,
+    })
+  } catch (error) {
+    return c.json(
+      {
+        error: 'Could not compute stats',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       503,

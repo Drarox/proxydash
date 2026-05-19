@@ -41,6 +41,7 @@ On startup, `startCertRefreshCron()` is called. It immediately fetches TLS certi
 | `GET` | `/api/nginx/config` | Raw content of `nginx.conf` |
 | `GET` | `/api/nginx/config-files` | Raw content of every file in `sites-available` |
 | `GET` | `/api/nginx/sites` | Parsed proxy site list with cached cert status |
+| `GET` | `/api/stats` | Stats summary (sites count, certs needing attention, TLS health %) |
 | `POST` | `/api/nginx/cert-cache/refresh` | Trigger an immediate cert cache refresh |
 
 ## Environment variables

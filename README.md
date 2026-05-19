@@ -110,7 +110,40 @@ The backend exposes a small REST API under `/api`:
 | `GET` | `/api/nginx/config` | Raw content of `nginx.conf` |
 | `GET` | `/api/nginx/config-files` | Raw content of every file in `sites-available` |
 | `GET` | `/api/nginx/sites` | Parsed proxy site list with cached cert status |
+| `GET` | `/api/stats` | Stats summary (sites count, certs needing attention, TLS health %) |
 | `POST` | `/api/nginx/cert-cache/refresh` | Trigger an immediate cert cache refresh |
+
+---
+
+## Homepage widget
+
+ProxyDash exposes a `/api/stats` endpoint designed for the [Homepage](https://gethomepage.dev) dashboard using the [Custom API widget](https://gethomepage.dev/widgets/services/customapi/).
+
+![Homepage Widget Screenshot](assets/homepage_widget.png)
+
+Add the following to your `services.yaml` in Homepage:
+
+```yaml
+- ProxyDash:
+    href: http://your-proxydash-host:3000
+    description: Reverse Proxy Dashboard
+    widget:
+      type: customapi
+      url: http://your-proxydash-host:3000/api/stats
+      refreshInterval: 60000
+      mappings:
+        - field: sites
+          label: Sites
+          format: number
+        - field: certsNeedingAttention
+          label: Certs needing attention
+          format: number
+        - field: tlsHealthPercent
+          label: TLS health
+          format: percent
+```
+
+Replace `your-proxydash-host:3000` with the actual host and port where ProxyDash is running.
 
 ---
 
