@@ -178,7 +178,8 @@ p {
 .theme-toggle,
 .refresh-button,
 .view-button,
-.icon-button {
+.icon-button,
+.github-link {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -187,12 +188,30 @@ p {
 }
 
 .theme-toggle,
-.refresh-button {
+.refresh-button,
+.github-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
+}
+
+.theme-toggle,
+.refresh-button {
   padding: 0 0.85rem;
+}
+
+.github-link {
+  width: 44px;
+  transition: all 0.2s ease;
+}
+
+.github-link svg {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.github-link:hover svg {
+  transform: scale(1.12) rotate(-6deg);
 }
 
 .theme-toggle {
@@ -442,7 +461,8 @@ code {
 .view-button:hover,
 .theme-toggle:hover,
 .refresh-button:hover,
-.icon-button:hover {
+.icon-button:hover,
+.github-link:hover {
   border-color: var(--blue);
   color: var(--blue);
 }
