@@ -34,9 +34,9 @@ function toggleTheme() {
 </script>
 
 <template>
-  <div class="app-shell" :class="{ 'theme-dark': isDark }">
-    <div class="dashboard">
-      <main class="main-content">
+  <div class="min-h-screen app-shell-gradient text-text" :class="{ 'theme-dark': isDark }">
+    <div class="min-h-screen">
+      <main class="mx-auto w-full max-w-dashboard p-8 md:p-8 max-md:p-4">
         <DashboardHeader
           v-model:query="query"
           :error="error"
